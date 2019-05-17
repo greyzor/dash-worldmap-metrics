@@ -1,9 +1,9 @@
-dash==0.35.1
-dash-core-components==0.42.1
-dash-html-components==0.13.4
+dash==0.43.0
+dash-core-components==0.48.0
+dash-html-components==0.16.0
 dash_colorscales==0.0.4
 pandas==0.24.2
 cufflinks==0.15
 numpy
-dash_dangerously_set_inner_html
+dash_dangerously_set_inner_html==0.0.2
 uwsgi

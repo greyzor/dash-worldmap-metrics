@@ -7,8 +7,8 @@ external_scripts = ["https://buttons.github.io/buttons.js"]
 
 ## init:
 app = dash.Dash(__name__, external_scripts=external_scripts)
-app.css.config.serve_locally = True
-app.scripts.config.serve_locally = True
+app.css.config.serve_locally = False
+app.scripts.config.serve_locally = False
 
 ## build:
 app = build_app(app)
