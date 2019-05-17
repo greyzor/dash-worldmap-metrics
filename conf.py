@@ -8,8 +8,7 @@ SCALE = 100
 # _palette = sns.light_palette((5, 90, 55), N_BINS, input="husl")
 # DEFAULT_COLORSCALE = _palette.as_hex()
 DEFAULT_COLORSCALE = [
-    u'#fee7ec', u'#fdd3dd', u'#fcbfcd', u'#fbabbd', u'#fb97ae',
-    u'#fa839e', u'#f96f8f', u'#f85b7f', u'#f7476f', u'#f63360'
+	'#e8f6f8', '#fce5e7', '#f9cdd2', '#f7b4bb', '#f49ca6', '#f1848f', '#ef6c7a', '#ec5363', '#e93b4e', '#e72338'
 ]
 DEFAULT_OPACITY = 0.8
 
