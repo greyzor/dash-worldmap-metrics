@@ -88,8 +88,8 @@ def build_app_layout(app, mapbox_access_token, data, layers):
 
         html.Div([
             html.H4(
-                'Ecological World Panel // World Information Hot Countries',
-                style={'text-align':'left'}
+                'World Map Metrics',
+                style={'text-align':'center', 'background-color':'#e51b79', 'color':'white'}
             ),
             dcc.Graph(
                 id='countries-map',
