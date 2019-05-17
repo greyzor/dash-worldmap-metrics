@@ -6,3 +6,4 @@ pandas==0.24.2
 cufflinks==0.15
 numpy
 dash_dangerously_set_inner_html
+uwsgi
