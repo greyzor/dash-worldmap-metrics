@@ -155,17 +155,12 @@ def build_geo_data(df_geo, text_col='country'):
 
 if __name__ == '__main__':
     """ """
-    global SCALE
-    global DEFAULT_COLORSCALE
-    global MAPBOX_ACCESS_TOKEN
-
     ## external scripts
     external_scripts = ["https://buttons.github.io/buttons.js"]
 
     ## init:
     app = dash.Dash(__name__, external_scripts=external_scripts)
     app.scripts.config.serve_locally = False
-
 
     ## load: source data
     with open('data/countries.geo.json') as f:
