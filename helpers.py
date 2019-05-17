@@ -26,14 +26,14 @@ def _extract_lat(d):
         return np.mean([item[1] for item in d['coordinates'][0]])
     return np.mean([item[1] for item in d['coordinates'][0][0]])
 
-def build_country_geoloc_dataframe(source):
+def create_country_geoloc_dataframe(source):
     """ """
     df_geo = pd.DataFrame(source['features'])
-    df_geo['country'] = df_geo['properties'].apply(lambda d: d['name'])
+    df_geo['Country'] = df_geo['properties'].apply(lambda d: d['name'])
     df_geo['lng'] = df_geo['geometry'].apply(_extract_lng)
     df_geo['lat'] = df_geo['geometry'].apply(_extract_lat)
-    df_geo = df_geo[['country','lng','lat']]
-    df_geo['hover'] = '<div/>hover text here<br>'+df_geo['country']
+    df_geo = df_geo[['Country','lng','lat']]
+    df_geo['hover'] = '<div/>hover text here<br>'+df_geo['Country']
     return df_geo
 
 def generate_random_country_partitions(source, scale=SCALE):
@@ -50,7 +50,44 @@ def generate_random_country_partitions(source, scale=SCALE):
     partitions = json.loads(partitions)
     return partitions
 
-def build_layers_for_countries(source, partitions, colors):
+def compute_country_airquality_scores(source, fpath='./data/air_quality_country.csv'):
+    """ """
+    ## Countries list
+    all_countries = [d['properties']['name'] for d in source['features']]
+
+    ## Air quality data
+    df = pd.read_csv(fpath, sep=',')
+    df_latest = df[df.Year==2015]
+
+    ## Cleanify data
+    mapping = {
+        'Guinea-Bissau': 'Guinea Bissau',
+        "Cote d'Ivoire": 'Ivory Coast',
+        'Serbia': 'Republic of Serbia',
+        'Congo': 'Republic of the Congo',
+        'Russian Federation': 'Russia',
+        'Tanzania': 'United Republic of Tanzania',
+        'United States': 'United States of America',
+    }
+    def replace_country_name(x):
+        """ """
+        if x in mapping.keys():
+            return mapping[x]
+        return x
+
+    df_latest['Country'] = df_latest['Type'].apply(replace_country_name)
+
+    ## Merge list of countries with Normalized Air quality estimate
+    df_final = pd.DataFrame(all_countries, columns=['Country']).merge(df_latest[['Country', 'Exposure_Mean']])
+    scaler = np.max(df_latest['Exposure_Mean'])*1.05
+    df_final['Exposure_Norm'] = (100*df_final['Exposure_Mean']/scaler).astype(int)
+
+    df_final['bin'] = (df_final['Exposure_Norm']/N_BINS).astype(int)
+    partitions = df_final.groupby('bin')['Country'].apply(list).to_json()
+    partitions = json.loads(partitions)
+    return (partitions, df_final)
+
+def build_mapbox_layers_for_countries(source, partitions, colors):
     """ """
     layers = []
     for _bin in partitions.keys():
@@ -103,7 +140,12 @@ def build_app_layout(app, mapbox_access_token, data, layers):
                 ],
                 style={'background-color':'#e51b79', 'color':'white'}
             ),
-            html.Div([], style={'min-height':'25px', 'background-color':'white'}),
+            html.Div(
+                [
+                    html.Div('Exposure to PM25 air pollution for 2015, with data from: www.stateofglobalair.org')
+                ],
+                style={'min-height':'40px', 'background-color':'white', 'text-align':'center'}
+            ),
 
             ## The Map
             dcc.Graph(
@@ -133,7 +175,7 @@ def build_app_layout(app, mapbox_access_token, data, layers):
     )
     return app
 
-def build_geo_data(df_geo, text_col='country'):
+def build_mapbox_geo_data(df_geo, text_col='description'):
     """ """
     data = [
         dict(
@@ -157,12 +199,16 @@ def build_app(app):
     with open('data/countries.geo.json') as f:
         source = json.load(f)
 
-    df_geo = build_country_geoloc_dataframe(source)
-    partitions = generate_random_country_partitions(source, scale=SCALE)
+    df_geo = create_country_geoloc_dataframe(source)
+    # partitions = generate_random_country_partitions(source, scale=SCALE)
+    (partitions, df_scores) = compute_country_airquality_scores(source, fpath='./data/air_quality_country.csv')
+
+    df_geo = df_geo.merge(df_scores[['Country','Exposure_Mean']])
+    df_geo['description'] = df_geo['Country']+'<br>Exposure (mean) to PM25: '+df_geo['Exposure_Mean'].astype(str)
 
     ## build: map data and layers
-    layers = build_layers_for_countries(source, partitions, DEFAULT_COLORSCALE)
-    data = build_geo_data(df_geo, text_col='country')
+    layers = build_mapbox_layers_for_countries(source, partitions, DEFAULT_COLORSCALE)
+    data = build_mapbox_geo_data(df_geo, text_col='description')
 
     ## build: layout
     app = build_app_layout(app, MAPBOX_ACCESS_TOKEN, data, layers)
