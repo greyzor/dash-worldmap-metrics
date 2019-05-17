@@ -5,5 +5,4 @@ dash_colorscales==0.0.4
 pandas==0.24.2
 cufflinks==0.15
 numpy
-seaborn
 dash_dangerously_set_inner_html
