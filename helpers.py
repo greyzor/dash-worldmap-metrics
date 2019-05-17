@@ -111,9 +111,34 @@ def build_mapbox_layers_for_countries(source, partitions, colors):
 
     return layers
 
-
 def build_app_layout(app, mapbox_access_token, data, layers):
     """ """
+    ## Annotations for the legend
+    annotations = [dict(
+        showarrow=False,
+        align='right',
+        text='<b>PM25 level ranges:</b>',
+        x=0.975,
+        y=0.95,
+        bgcolor='white'
+    )]
+
+    for k, color in enumerate(DEFAULT_COLORSCALE):
+        annotations.append(
+            dict(
+                arrowcolor = color,
+                text='range: %s-%s'%(10*k, 10*(k+1)),
+                x = 0.975,
+                y = 0.90-0.3*k/N_BINS,
+                ax = -90,
+                ay = 0,
+                arrowwidth=12,
+                arrowhead=0,
+                bgcolor = '#EFEFEE'
+            )
+        )
+
+    ## Main layout
     app.layout = html.Div(children=[
 
         html.Div([
@@ -164,6 +189,7 @@ def build_app_layout(app, mapbox_access_token, data, layers):
                             pitch=0,
                             zoom=1.5,
                         ),
+                        annotations = annotations,
                         margin=dict(r=0, l=0, t=0, b=0),
                         showlegend=False,
                         height=900 # FIXME
