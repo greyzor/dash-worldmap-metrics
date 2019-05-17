@@ -1,1 +1,1 @@
-web: uwsgi --socket 0.0.0.0:8050 --protocol=http -w wsgi:app
+web: uwsgi --socket 0.0.0.0:$PORT --protocol=http -w wsgi:app
