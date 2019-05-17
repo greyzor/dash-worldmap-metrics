@@ -6,3 +6,4 @@ pandas==0.20.3
 cufflinks==0.15
 numpy
 seaborn
+dash_dangerously_set_inner_html

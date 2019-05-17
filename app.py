@@ -10,6 +10,7 @@ import numpy as np
 import re
 import json
 import seaborn as sns
+import dash_dangerously_set_inner_html
 
 ## globals: FIXME: load from conf
 MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoiamFja3AiLCJhIjoidGpzN0lXVSJ9.7YK6eRwUNFwd3ODZff6JvA"
@@ -87,10 +88,27 @@ def build_app_layout(app, mapbox_access_token, data, layers):
     app.layout = html.Div(children=[
 
         html.Div([
-            html.H4(
-                'World Map Metrics',
-                style={'text-align':'center', 'background-color':'#e51b79', 'color':'white'}
+            ## Header
+            html.Div(
+                [
+                    html.H4(
+                        'World Map Metrics',
+                        style={'text-align':'center', 'display':'inline-block', 'margin':'20px 0px 20px 40px'}
+                    ),
+                    html.Div(
+                        html.A(
+                            html.Button('Show on Github!'),
+                            href='https://github.com/greyzor/dash-worldmap-metrics',
+                            target='_blank'
+                        ),
+                        style={'float':'right', 'background-color':'white', 'margin':'20px 40px 20px 0px'},
+                    )
+                ],
+                style={'background-color':'#e51b79', 'color':'white'}
             ),
+            html.Div([], style={'min-height':'25px', 'background-color':'white'}),
+
+            ## The Map
             dcc.Graph(
                 id='countries-map',
                 figure=dict(
@@ -101,8 +119,8 @@ def build_app_layout(app, mapbox_access_token, data, layers):
                             accesstoken=mapbox_access_token,
                             style='mapbox://styles/mapbox/satellite-v8',
                             center=dict(
-                                lat=38.72490,
-                                lon=-95.61446,
+                                lat=30, #38.72490,
+                                lon=-1.67571, #-95.61446,
                             ),
                             pitch=0,
                             zoom=1.5,
@@ -141,8 +159,13 @@ if __name__ == '__main__':
     global DEFAULT_COLORSCALE
     global MAPBOX_ACCESS_TOKEN
 
+    ## external scripts
+    external_scripts = ["https://buttons.github.io/buttons.js"]
+
     ## init:
-    app = dash.Dash(__name__)
+    app = dash.Dash(__name__, external_scripts=external_scripts)
+    app.scripts.config.serve_locally = False
+
 
     ## load: source data
     with open('data/countries.geo.json') as f:
