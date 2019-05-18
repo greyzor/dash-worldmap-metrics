@@ -1,4 +1,5 @@
 """
+Precomputing, App Layout (Layers/Markers), Callbacks helpers.
 """
 import dash_core_components as dcc
 import dash_html_components as html
@@ -12,6 +13,11 @@ import json
 import dash_dangerously_set_inner_html
 
 from conf import *
+from colors import (
+    _color_from_bin,
+    _opacity_from_bin,
+    _border_color_from_bin
+)
 
 ## helpers:
 def _extract_lng(arr):
@@ -97,7 +103,7 @@ def compute_country_airquality_scores(source, fpath='./data/air_quality_country.
     partitions = json.loads(partitions)
     return (partitions, df_final)
 
-def build_mapbox_layers_for_countries(source, partitions, colors):
+def build_mapbox_layers_for_countries(source, partitions, colors, layer_border_colors='white'):
     """ """
     layers = []
     for _bin in partitions.keys():
@@ -115,39 +121,26 @@ def build_mapbox_layers_for_countries(source, partitions, colors):
             source=_source,
             type='fill',
             color=colors[int(_bin)],
-            opacity=DEFAULT_OPACITY
+            opacity=DEFAULT_OPACITY,
+            # below="water"
+            # below="state-label-sm",
+            # below="mapbox"
+        )
+        layers.append(layer)
+
+        layer = dict(
+            sourcetype='geojson',
+            source=_source,
+            type='line',
+            color=layer_border_colors[int(_bin)],
+            opacity=1.0,
         )
         layers.append(layer)
 
     return layers
 
-def build_app_layout(app, mapbox_access_token, data, layers):
+def build_app_layout(app, data, layers, mapbox_access_token, default_style_value='custom'):
     """ """
-    ## Annotations for the legend
-    annotations = [dict(
-        showarrow=False,
-        align='right',
-        text='<b>PM25 level ranges:</b>',
-        x=0.975,
-        y=0.95,
-        bgcolor='white'
-    )]
-
-    for k, color in enumerate(DEFAULT_COLORSCALE):
-        annotations.append(
-            dict(
-                arrowcolor = color,
-                text='range: %s-%s'%(10*k, 10*(k+1)),
-                x = 0.975,
-                y = 0.90-0.3*k/N_BINS,
-                ax = -90,
-                ay = 0,
-                arrowwidth=12,
-                arrowhead=0,
-                bgcolor = '#EFEFEE'
-            )
-        )
-
     ## Main layout
     app.layout = html.Div(children=[
 
@@ -184,20 +177,30 @@ def build_app_layout(app, mapbox_access_token, data, layers):
                             dcc.Dropdown(
                                 id='metric-1-dropdown',
                                 options=[
-                                    {'label': 'PM25 pollution', 'value': 'PM25'},
+                                    {'label': 'PM25 pollution exposure', 'value': 'PM25'},
                                     {'label': 'Other metric', 'value': 'OTHER'},
                                 ],
                                 value='PM25',
                             ),
                         ],
-                        className='four columns'
+                        className='three columns'
                     ),
-                    html.Div(className='two columns'),
                     html.Div(
                         'Exposure to PM25 air pollution for 2015, with data from: www.stateofglobalair.org',
                         className='six columns',
                         style={'font-weight':'bold', 'font-size':'16px'}
-                    )
+                    ),
+                    html.Div(
+                        dcc.Dropdown(
+                            id='map-style-selector',
+                            options=[
+                                {'label': 'Style: Default', 'value': 'default'},
+                                {'label': 'Style: Custom', 'value': 'custom'},
+                            ],
+                            value=default_style_value,
+                        ),
+                        className='three columns'
+                    ),
                 ],
                 style={'background-color':'white', 'text-align':'center', 'padding':'1.5rem'},
                 className='row'
@@ -205,34 +208,20 @@ def build_app_layout(app, mapbox_access_token, data, layers):
 
             ## The Map
             dcc.Graph(
-                id='countries-map',
-                figure=dict(
-                    data=data,
-                    layout=dict(
-                        mapbox=dict(
-                            layers=layers,
-                            accesstoken=mapbox_access_token,
-                            style='mapbox://styles/mapbox/satellite-v8',
-                            center=dict(
-                                lat=30, #38.72490,
-                                lon=-1.67571, #-95.61446,
-                            ),
-                            pitch=0,
-                            zoom=1.5,
-                        ),
-                        annotations = annotations,
-                        margin=dict(r=0, l=0, t=0, b=0),
-                        showlegend=False,
-                        height=900 # FIXME
-                        # **{'height':'900px','min-height':'300px','max-height':'70vh'}
-                    )
+                id='world-map',
+                figure=build_map_figure(
+                    data,
+                    None,
+                    mapbox_access_token,
+                    DEFAULT_COLORSCALE,
+                    map_style=VALUE_TO_MAPBOX_STYLE[default_style_value]
                 )
             ),]),
         ], className='twelve columns', style={'margin':0}
     )
     return app
 
-def build_mapbox_geo_data(df_geo, text_col='description'):
+def build_mapbox_geo_data(df_geo, text_col='description', markers=None):
     """ """
     data = [
         dict(
@@ -243,12 +232,63 @@ def build_mapbox_geo_data(df_geo, text_col='description'):
             hoverinfo='text',
             selected = dict(marker = dict(opacity=1)),
             unselected = dict(marker = dict(opacity = 0)),
+            # mode='markers+text',
             mode='markers+text',
-            marker=dict(size=25, color='white', opacity=0.2),
+            marker=markers,
         )
     ]
     return data
 
+
+def build_map_figure(data, layers, mapbox_access_token, annot_colors, map_style='light'):
+    """ """ 
+    ## Annotations for the legend
+    annotations = None
+    if layers is not None and len(layers) > 0:
+        annotations = [dict(
+            showarrow=False,
+            align='right',
+            text='<b>PM25 level ranges:</b>',
+            x=0.975,
+            y=0.95,
+            bgcolor='white'
+        )]
+
+        for k, color in enumerate(annot_colors):
+            annotations.append(
+                dict(
+                    arrowcolor = color,
+                    text='range: %s-%s'%(10*k, 10*(k+1)),
+                    x = 0.975,
+                    y = 0.90-0.3*k/N_BINS,
+                    ax = -90,
+                    ay = 0,
+                    arrowwidth=12,
+                    arrowhead=0,
+                    bgcolor = '#EFEFEE'
+                )
+            )
+
+    return dict(
+        data=data,
+        layout=dict(
+            mapbox=dict(
+                layers=layers,
+                accesstoken=mapbox_access_token,
+                style=map_style,
+                center=dict(
+                    lat=30, #38.72490,
+                    lon=-1.67571, #-95.61446,
+                ),
+                pitch=0,
+                zoom=1.5,
+            ),
+            annotations=annotations,
+            margin=dict(r=0, l=0, t=0, b=0),
+            showlegend=False,
+            height=900 # FIXME
+        )
+    )
 
 def build_app(app):
     """ """
@@ -260,17 +300,49 @@ def build_app(app):
     # partitions = generate_random_country_partitions(source, scale=SCALE)
     (partitions, df_scores) = compute_country_airquality_scores(source, fpath='./data/air_quality_country.csv')
 
-    df_geo = df_geo.merge(df_scores[['Country','Exposure_Mean']])
-    df_geo['description'] = df_geo['Country']+'<br>Exposure (mean) to PM25: '+df_geo['Exposure_Mean'].astype(str)
+    df_geo = df_geo.merge(df_scores[['Country','Exposure_Mean', 'bin']])
+    df_geo['description'] = df_geo['Country']+': '+df_geo['Exposure_Mean'].astype(str)
+
+    ## colors for markers (one per country), and borders (one color per layer)
+    marker_colors = df_geo['bin'].apply(lambda idx: _color_from_bin(idx, N_BINS))
+    layer_border_colors = [_border_color_from_bin(int(_bin), N_BINS) for _bin in partitions.keys()]
+
+    markers = dict(
+        size=25,
+        color=marker_colors,
+        # opacity=df_geo['bin'].apply(lambda idx: _opacity_from_bin(idx, N_BINS))
+        opacity=1.
+    )
 
     ## build: map data and layers
-    layers = build_mapbox_layers_for_countries(source, partitions, DEFAULT_COLORSCALE)
-    data = build_mapbox_geo_data(df_geo, text_col='description')
+    layers = build_mapbox_layers_for_countries(
+        source, partitions, DEFAULT_COLORSCALE,
+        layer_border_colors=layer_border_colors
+    )
+    data = build_mapbox_geo_data(df_geo, text_col='description', markers=markers)
 
     ## build: layout
-    app = build_app_layout(app, MAPBOX_ACCESS_TOKEN, data, layers)
+    app = build_app_layout(app, data, layers, MAPBOX_ACCESS_TOKEN, default_style_value='custom')
 
     ## styling: external
     app.css.append_css({'external_url': 'https://codepen.io/plotly/pen/EQZeaW.css'})
+
+    ## callbacks
+    def _change_map_style_callback(value):
+        """ """
+        map_style = VALUE_TO_MAPBOX_STYLE[value]
+
+        return build_map_figure(
+            data,
+            layers,
+            MAPBOX_ACCESS_TOKEN,
+            DEFAULT_COLORSCALE,
+            map_style=map_style
+        )
+
+    app.callback(
+        Output('world-map', 'figure'),
+        [Input('map-style-selector', 'value')]
+    )(_change_map_style_callback)
 
     return app

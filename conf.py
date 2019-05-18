@@ -12,11 +12,17 @@ DEFAULT_COLORSCALE = [
 ]
 DEFAULT_OPACITY = 0.8
 
+VALUE_TO_MAPBOX_STYLE = {
+    'default': 'light',
+    'custom': 'mapbox://styles/mapbox/satellite-v8'
+}
+
 ## export:
 __all__ = [
 	'MAPBOX_ACCESS_TOKEN',
 	'N_BINS',
 	'SCALE',
 	'DEFAULT_COLORSCALE',
-	'DEFAULT_OPACITY'
+	'DEFAULT_OPACITY',
+	'VALUE_TO_MAPBOX_STYLE'
 ]
