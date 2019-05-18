@@ -165,11 +165,32 @@ def build_app_layout(app, mapbox_access_token, data, layers):
                 ],
                 style={'background-color':'#e51b79', 'color':'white'}
             ),
+
+            ## Inputs and selection dropdowns
             html.Div(
                 [
-                    html.Div('Exposure to PM25 air pollution for 2015, with data from: www.stateofglobalair.org')
+                    html.Div(
+                        [
+                            dcc.Dropdown(
+                                id='metric-1-dropdown',
+                                options=[
+                                    {'label': 'PM25 pollution', 'value': 'PM25'},
+                                    {'label': 'Other metric', 'value': 'OTHER'},
+                                ],
+                                value='PM25',
+                            ),
+                        ],
+                        className='four columns'
+                    ),
+                    html.Div(className='two columns'),
+                    html.Div(
+                        'Exposure to PM25 air pollution for 2015, with data from: www.stateofglobalair.org',
+                        className='six columns',
+                        style={'font-weight':'bold', 'font-size':'16px'}
+                    )
                 ],
-                style={'min-height':'40px', 'background-color':'white', 'text-align':'center'}
+                style={'background-color':'white', 'text-align':'center', 'padding':'1.5rem'},
+                className='row'
             ),
 
             ## The Map
