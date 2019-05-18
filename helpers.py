@@ -14,26 +14,36 @@ import dash_dangerously_set_inner_html
 from conf import *
 
 ## helpers:
-def _extract_lng(d):
+def _extract_lng(arr):
     """ """
-    if d['type'] == 'Polygon':
-        return np.mean([item[0] for item in d['coordinates'][0]])
-    return np.mean([item[0] for item in d['coordinates'][0][0]])
+    return np.mean([item[0] for item in arr[0]])
 
-def _extract_lat(d):
+def _extract_lat(arr):
     """ """
-    if d['type'] == 'Polygon':
-        return np.mean([item[1] for item in d['coordinates'][0]])
-    return np.mean([item[1] for item in d['coordinates'][0][0]])
+    return np.mean([item[1] for item in arr[0]])
 
 def create_country_geoloc_dataframe(source):
     """ """
     df_geo = pd.DataFrame(source['features'])
     df_geo['Country'] = df_geo['properties'].apply(lambda d: d['name'])
-    df_geo['lng'] = df_geo['geometry'].apply(_extract_lng)
-    df_geo['lat'] = df_geo['geometry'].apply(_extract_lat)
+
+    ## For each polygon in MultiPolygon, explode into a new row.
+    df_geo['geo_type'] = df_geo['geometry'].apply(lambda d: d['type'])
+    df_geo['coord'] = df_geo['geometry'].apply(lambda d: d['coordinates'])
+    df_geo = df_geo[['type','geo_type','Country','coord']]
+    x = df_geo[df_geo.geo_type=='MultiPolygon']['coord'].apply(pd.Series)
+    x = x.merge(df_geo, left_index=True, right_index=True).drop('coord',axis=1).melt(id_vars=['type', 'geo_type','Country'], value_name = "coord")
+    x = x.dropna().sort_values(['Country','variable'])
+
+    ## Merge new exploded MultiPolygon with non-exploded Polygon
+    df_geo[df_geo.geo_type=='Polygon']['variable'] = 0
+    df_geo = pd.concat([x,df_geo[df_geo.geo_type=='Polygon']]).sort_values(['Country','variable'])
+
+    ## Compute geo-coordinates
+    df_geo['lng'] = df_geo['coord'].apply(_extract_lng)
+    df_geo['lat'] = df_geo['coord'].apply(_extract_lat)
+
     df_geo = df_geo[['Country','lng','lat']]
-    df_geo['hover'] = '<div/>hover text here<br>'+df_geo['Country']
     return df_geo
 
 def generate_random_country_partitions(source, scale=SCALE):
