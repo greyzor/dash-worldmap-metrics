@@ -3,7 +3,7 @@
 The goal of this project is to put some relief on worldwide metrics, either being related to environment, or other significant causes. As of now, it's more intended to be a data geo-economical/environmental exploration tool.
 
 ## Preview
-A demo is available here: [world-map-metrics.herokuapp.com](https://world-map-metrics.herokuapp.com/){:target="_blank"}
+A demo is available here: [world-map-metrics.herokuapp.com](https://world-map-metrics.herokuapp.com/)
 
 ## Installation
 ```
@@ -18,3 +18,15 @@ or `make run`
 ## Resources & credits
 * data providers:
     - https://www.stateofglobalair.org/data/#/air/table
+
+
+## Heroku deploy
+```
+git push origin master
+
+heroku apps
+heroku logs --tail -a world-map-metrics
+heroku ps -a world-map-metrics
+
+heroku config:add PORT=8050 -a world-map-metrics
+```
