@@ -18,15 +18,3 @@ or `make run`
 ## Resources & credits
 * data providers:
     - https://www.stateofglobalair.org/data/#/air/table
-
-
-## Heroku deploy
-```
-git push origin master
-
-heroku apps
-heroku logs --tail -a world-map-metrics
-heroku ps -a world-map-metrics
-
-heroku config:add PORT=8050 -a world-map-metrics
-```
