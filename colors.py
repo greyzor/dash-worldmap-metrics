@@ -2,7 +2,7 @@
 Color helpers.
 """
 def _color_from_bin(bin, n_bins):
-    """ """
+    """ Return color for bin."""
     if n_bins <= 0:
         return 'white'
     ratio = bin/float(n_bins)
@@ -16,7 +16,7 @@ def _color_from_bin(bin, n_bins):
     return 'red'
 
 def _opacity_from_bin(bin, n_bins):
-    """ """
+    """ Return opacity for bin."""
     if n_bins <= 0:
         return 0.35
     ratio = bin/float(n_bins)
@@ -29,7 +29,7 @@ def _opacity_from_bin(bin, n_bins):
     return 1.0
 
 def _border_color_from_bin(bin, n_bins):
-    """ """
+    """ Return border color for bin."""
     if n_bins <= 0:
         return 'grey'
     ratio = bin/float(n_bins)

@@ -1,4 +1,5 @@
 """
+All configuration is here.
 """
 
 ## globals: FIXME: load from conf

@@ -15,6 +15,5 @@ app = build_app(app)
 server = app.server
 
 if __name__ == '__main__':
-    """ """
-    ## app: run
+    """ This is the main. """
     app.run_server(host='0.0.0.0', debug=True)

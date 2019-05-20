@@ -21,15 +21,22 @@ from colors import (
 
 ## helpers:
 def _extract_lng(arr):
-    """ """
+    """ Extract average longitude from array of geo-coordinates in format: (lng,lat)"""
     return np.mean([item[0] for item in arr[0]])
 
 def _extract_lat(arr):
-    """ """
+    """ Extract average latitude from array of geo-coordinates in format: (lng,lat)"""
     return np.mean([item[1] for item in arr[0]])
 
 def create_country_geoloc_dataframe(source):
-    """ """
+    """Create geolocation Dataframe from source raw data.
+
+    :param source: raw source data.
+    :type source: dict.
+
+    :returns: a geolocation DataFrame.
+    :rtype: pd.DataFrame
+    """
     df_geo = pd.DataFrame(source['features'])
     df_geo['Country'] = df_geo['properties'].apply(lambda d: d['name'])
 
@@ -53,7 +60,15 @@ def create_country_geoloc_dataframe(source):
     return df_geo
 
 def generate_random_country_partitions(source, scale=SCALE):
-    """ """
+    """Create random country partitions from source raw data.
+
+    :param source: raw source data.
+    :type source: dict.
+
+    :returns: a partitions of countries.
+    :rtype: dict of partitions, each key is the bin idx,
+            each value is the list of countries for the bin.
+    """
     global N_BINS
 
     data = [(d['properties']['name'], d['id']) for d in source['features']]
@@ -67,7 +82,16 @@ def generate_random_country_partitions(source, scale=SCALE):
     return partitions
 
 def compute_country_airquality_scores(source, fpath='./data/air_quality_country.csv'):
-    """ """
+    """Compute Air Quality scores from source raw data.
+
+    :param source: raw source data.
+    :type source: dict.
+    :param fpath: data file path.
+    :type fpath: str
+
+    :returns: a partitions of countries, and dataframe of scores
+    :rtype: tuple (dict of partitions, pd.DataFrame of bin scores per country)
+    """
     ## Countries list
     all_countries = [d['properties']['name'] for d in source['features']]
 
@@ -86,7 +110,7 @@ def compute_country_airquality_scores(source, fpath='./data/air_quality_country.
         'United States': 'United States of America',
     }
     def replace_country_name(x):
-        """ """
+        """ Replace country name by its mapping using dict. """
         if x in mapping.keys():
             return mapping[x]
         return x
@@ -104,7 +128,22 @@ def compute_country_airquality_scores(source, fpath='./data/air_quality_country.
     return (partitions, df_final)
 
 def build_mapbox_layers_for_countries(source, partitions, colors, layer_border_colors='white'):
-    """ """
+    """Build Mapbox layers struct.
+
+    :param source: raw source data.
+    :type source: dict.
+    :param partitions: dict of partitions, key is bin, value is list of countries for bin.
+    :type partitions: dict[list]
+    :param colors: list of colors, one per layer.
+    :type colors: list[str]
+    :param layer_border_colors: borders color per layer.
+    :type layer_border_colors: list[str] or str
+
+    :returns: Mapbox layers inner struct.
+    :rtype: list[dict], each dict being an inner map layer.
+    """
+    first_symbol_id = None
+
     layers = []
     for _bin in partitions.keys():
         countries = partitions[_bin]
@@ -140,7 +179,22 @@ def build_mapbox_layers_for_countries(source, partitions, colors, layer_border_c
     return layers
 
 def build_app_layout(app, data, layers, mapbox_access_token, default_style_value='custom'):
-    """ """
+    """Build Application Layout.
+
+    :param app: dash app.
+    :type app: dash.dash.Dash
+    :param data: mapbox data inner struct.
+    :type data: list[dict]
+    :param layers: mapbox layers inner struct.
+    :type layers: list[dict], each dict being an inner map layer.
+    :param mapbox_access_token: mapbox access token.
+    :type mapbox_access_token: str
+    :param default_style_value: default style.
+    :type default_style_value: str.
+
+    :returns: app object with layout field updated.
+    :rtype: dash.dash.Dash
+    """
     ## Main layout
     app.layout = html.Div(children=[
 
@@ -222,7 +276,18 @@ def build_app_layout(app, data, layers, mapbox_access_token, default_style_value
     return app
 
 def build_mapbox_geo_data(df_geo, text_col='description', markers=None):
-    """ """
+    """Build Mapbox geolocation inner data struct.
+
+    :param df_geo: a geolocation DataFrame.
+    :type df_geo: pd.DataFrame
+    :param text_col: column name for text.
+    :type text_col: str
+    :param markers: markers to be displayed on map.
+    :type markers: dict
+
+    :returns: mapbox data inner struct.
+    :rtype: list[dict]
+    """
     data = [
         dict(
             lat=df_geo['lat'],
@@ -241,8 +306,22 @@ def build_mapbox_geo_data(df_geo, text_col='description', markers=None):
 
 
 def build_map_figure(data, layers, mapbox_access_token, annot_colors, map_style='light'):
-    """ """ 
-    ## Annotations for the legend
+    """Build Mapbox figure.
+
+    :param data: mapbox data inner struct.
+    :type data: list[dict]
+    :param layers: mapbox layers inner struct.
+    :type layers: list[dict], each dict being an inner map layer.
+    :param mapbox_access_token: mapbox access token.
+    :type mapbox_access_token: str
+    :param annot_colors: annotation colors used to show a legend.
+    :type annot_colors: list
+    :param map_style: default map style.
+    :type map_style: str.
+
+    :returns: dash dcc.Graph figure field.
+    :rtype: dict
+    """
     annotations = None
     if layers is not None and len(layers) > 0:
         annotations = [dict(
@@ -287,11 +366,12 @@ def build_map_figure(data, layers, mapbox_access_token, annot_colors, map_style=
             margin=dict(r=0, l=0, t=0, b=0),
             showlegend=False,
             height=900 # FIXME
+            # **{'height':'900px','min-height':'300px','max-height':'70vh'}
         )
     )
 
 def build_app(app):
-    """ """
+    """From default dash.dash.Dash application, return build and customized app."""
     ## load: source data
     with open('data/countries.geo.json') as f:
         source = json.load(f)
@@ -329,7 +409,7 @@ def build_app(app):
 
     ## callbacks
     def _change_map_style_callback(value):
-        """ """
+        """ Callback to change map style, according to value."""
         map_style = VALUE_TO_MAPBOX_STYLE[value]
 
         return build_map_figure(
