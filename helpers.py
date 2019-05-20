@@ -269,10 +269,11 @@ def build_app_layout(app, data, layers, mapbox_access_token, default_style_value
                     mapbox_access_token,
                     DEFAULT_COLORSCALE,
                     map_style=VALUE_TO_MAPBOX_STYLE[default_style_value]
-                )
-            ),]),
-        ], className='twelve columns', style={'margin':0}
-    )
+                ),
+                style={'height':'80vh'}
+            ),
+        ], style={'height':'100%'}),
+    ], className='twelve columns', style={'margin':0, 'height':'98vh', 'background-color':'white'})
     return app
 
 def build_mapbox_geo_data(df_geo, text_col='description', markers=None):
@@ -365,7 +366,6 @@ def build_map_figure(data, layers, mapbox_access_token, annot_colors, map_style=
             annotations=annotations,
             margin=dict(r=0, l=0, t=0, b=0),
             showlegend=False,
-            height=900 # FIXME
             # **{'height':'900px','min-height':'300px','max-height':'70vh'}
         )
     )
